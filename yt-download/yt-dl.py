@@ -1,6 +1,5 @@
 import yt_dlp
 import os
-from yt_dlp.utils import sanitize_filename
 
 def download_mp3_from_channel(channel_url, num_videos, audio_quality='192'):
     ydl_opts = {
@@ -11,7 +10,7 @@ def download_mp3_from_channel(channel_url, num_videos, audio_quality='192'):
             'preferredquality': audio_quality,  # Set the audio quality
         }],
         'noplaylist': False,  # Download all videos from the playlist or channel
-        'playlistend': num_videos,  # Limit the number of videos to download
+        'playlistend': None if num_videos == 'all' else num_videos,  # Limit the number of videos to download
         'outtmpl': '%(title)s.%(ext)s',  # Output filename template
         'ignoreerrors': True,  # Ignore errors to ensure the script continues
         'nooverwrites': True,  # Do not overwrite existing files
@@ -38,6 +37,17 @@ def download_mp3_from_channel(channel_url, num_videos, audio_quality='192'):
 
 if __name__ == "__main__":
     channel_url = input("Enter the YouTube channel URL: ")
-    num_videos = int(input("Enter the number of videos to download: "))
-    audio_quality = input("Enter the audio quality (e.g., 320 for 320 kbps): ")
+    num_videos_input = input("Enter the number of videos to download (or 'all' to download all videos): ")
+    audio_quality_input = input("Enter the audio quality (e.g., 320 for 320 kbps) [default: 192]: ")
+
+    if num_videos_input.lower() == 'all':
+        num_videos = 'all'
+    else:
+        num_videos = int(num_videos_input)
+
+    if not audio_quality_input.strip():
+        audio_quality = '192'
+    else:
+        audio_quality = audio_quality_input.strip()
+
     download_mp3_from_channel(channel_url, num_videos, audio_quality)
