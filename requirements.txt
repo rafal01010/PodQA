@@ -1,18 +1,16 @@
-# HuggingFace CLI
-huggingface-cli
+# HuggingFace
+huggingface_hub
+datasets
+
 
 
 # YouTube Download
 yt-dlp==2025.2.19
 
-# CrisperWhisper requirements
-torch
-torchaudio
-git+https://github.com/nyrahealth/transformers.git@crisper_whisper
+
+# whisper
+transformers
 accelerate
-scipy
-streamlit
-moviepy
-streamlit_mic_recorder
-librosa
+openai-whisper
+
 
