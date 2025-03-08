@@ -21,15 +21,19 @@ def download_mp3_from_channel(channel_url, num_videos, audio_quality='192'):
         info_dict = ydl.extract_info(channel_url, download=False)
         video_entries = info_dict.get('entries', [])
 
-        for entry in video_entries[:num_videos]:
-            video_title = entry.get('title', 'unknown')
-            output_filename = f"{video_title}.mp3".replace("|","｜").replace("?","？")
-            
-            if os.path.exists(output_filename):
-                print(f"File '{output_filename}' already exists. Skipping...")
-                continue
-            
-            ydl.download([entry['webpage_url']])
+        with open('video_links.txt', 'a', encoding='utf-8') as f:
+            for entry in video_entries[:num_videos]:
+                video_title = entry.get('title', 'unknown').replace("|","｜").replace("?","？")
+                video_url = entry.get('webpage_url', 'unknown')
+                output_filename = f"{video_title}.mp3"
+                
+                
+                if os.path.exists(output_filename):
+                    print(f"File '{output_filename}' already exists. Skipping...")
+                    continue
+                
+                ydl.download([entry['webpage_url']])
+                f.write(f"{video_title}\t{video_url}\n")
 
 if __name__ == "__main__":
     channel_url = input("Enter the YouTube channel URL: ")

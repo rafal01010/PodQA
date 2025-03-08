@@ -11,6 +11,5 @@ yt-dlp==2025.2.19
 # whisper
 transformers
 accelerate
-openai-whisper
 
 

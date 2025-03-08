@@ -16,15 +16,19 @@ def download_youtube_video_as_mp3(youtube_url, audio_quality):
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info_dict = ydl.extract_info(youtube_url, download=False)
-        video_title = info_dict.get('title', 'unknown_video')
-        output_filename = f"{video_title}.mp3".replace("|","｜").replace("?","？")
+        video_title = info_dict.get('title', 'unknown_video').replace("|","｜").replace("?","？")
+        output_filename = f"{video_title}.mp3"
 
-        if os.path.exists(output_filename):
-            print(f"The file '{output_filename}' already exists. Skipping download.")
-            return
+        with open('video_links.txt', 'a', encoding='utf-8') as f:
+            output_filename = f"{video_title}.mp3"
 
-        ydl.download([youtube_url])
-        print(f"Downloaded '{output_filename}' successfully.")
+            if os.path.exists(output_filename):
+                print(f"The file '{output_filename}' already exists. Skipping download.")
+                return
+
+            ydl.download([youtube_url])
+            f.write(f"{video_title}\t{youtube_url}\n")
+            print(f"Downloaded '{output_filename}' successfully.")
 
 if __name__ == "__main__":
     youtube_url = input("Enter the YouTube URL: ")

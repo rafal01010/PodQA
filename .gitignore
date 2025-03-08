@@ -4,6 +4,7 @@
 *.mp3
 *.webm
 *.srt
+yt-download/video_links.txt
 
 # local files
 sandbox/
