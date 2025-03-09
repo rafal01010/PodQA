@@ -2,7 +2,6 @@ import sqlite3
 
 conn = sqlite3.connect('transcripts.db')
 
-# Create source files table first
 conn.execute('''
 CREATE TABLE IF NOT EXISTS source_files (
     id INTEGER PRIMARY KEY,
@@ -12,7 +11,6 @@ CREATE TABLE IF NOT EXISTS source_files (
 );
 ''')
 
-# Create subtitles table with foreign key relationship
 conn.execute('''
 CREATE TABLE IF NOT EXISTS transcripts (
     id INTEGER PRIMARY KEY,
@@ -29,7 +27,6 @@ CREATE TABLE IF NOT EXISTS transcripts (
 );
 ''')
 
-# Add indexes for common search operations
 conn.execute('CREATE INDEX IF NOT EXISTS idx_source_file ON transcripts (source_file_id);')
 conn.execute('CREATE INDEX IF NOT EXISTS idx_timestamps ON transcripts (start_seconds);')
 
