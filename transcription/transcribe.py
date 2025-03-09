@@ -44,6 +44,15 @@ for audio_filename in os.listdir(audio_directory):
     if audio_filename.endswith(('.mp3', '.wav', '.flac')):  # Add more formats if needed
         audio_path = os.path.join(audio_directory, audio_filename)
         
+        # Construct the SRT file path
+        audio_base_name = os.path.splitext(audio_filename)[0]
+        srt_file_path = os.path.join(audio_directory, f"{audio_base_name}.srt")
+
+        # Check if SRT file already exists
+        if os.path.exists(srt_file_path):
+            print(f"SRT file already exists for {audio_filename}. Skipping transcription.")
+            continue
+
         print(f"Processing {audio_filename}")
         start_time = time.time()
 
@@ -62,14 +71,8 @@ for audio_filename in os.listdir(audio_directory):
             text = segment["text"].strip()
             srt_content.append(f"{i}\n{start_time} --> {end_time}\n{text}\n\n")
 
-        # Construct the SRT file path
-        audio_base_name = os.path.splitext(audio_filename)[0]
-        srt_file_path = os.path.join(audio_directory, f"{audio_base_name}.srt")
-
         # Save the SRT content to a file
         with open(srt_file_path, "w") as srt_file:
             srt_file.writelines(srt_content)
 
         print(f"SRT file saved to {srt_file_path}")
-
-        break
