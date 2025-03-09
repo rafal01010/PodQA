@@ -26,6 +26,7 @@ pipe = pipeline(
     torch_dtype=torch_dtype,
     device=device,
     return_timestamps=True,
+    chunk_length_s=30,
 )
 
 audio_directory = "../yt-download"
@@ -57,6 +58,7 @@ for audio_filename in os.listdir(audio_directory):
         for i, segment in enumerate(result["chunks"], start=1):
             start_time = format_timestamp(segment["timestamp"][0])
             end_time = format_timestamp(segment["timestamp"][1])
+            
             text = segment["text"].strip()
             srt_content.append(f"{i}\n{start_time} --> {end_time}\n{text}\n\n")
 
@@ -69,3 +71,5 @@ for audio_filename in os.listdir(audio_directory):
             srt_file.writelines(srt_content)
 
         print(f"SRT file saved to {srt_file_path}")
+
+        break
