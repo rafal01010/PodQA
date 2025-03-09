@@ -5,6 +5,7 @@
 *.webm
 *.srt
 yt-download/video_links.txt
+*.db
 
 # local files
 sandbox/

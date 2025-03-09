@@ -3,7 +3,6 @@ huggingface_hub
 datasets
 
 
-
 # YouTube Download
 yt-dlp==2025.2.19
 
@@ -13,3 +12,6 @@ transformers
 accelerate
 
 
+# embeddings
+sentence-transformers
+pysrt

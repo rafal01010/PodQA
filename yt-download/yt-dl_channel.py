@@ -1,5 +1,6 @@
 import yt_dlp
 import os
+import time
 
 def download_mp3_from_channel(channel_url, num_videos, audio_quality='192'):
     ydl_opts = {
@@ -15,18 +16,19 @@ def download_mp3_from_channel(channel_url, num_videos, audio_quality='192'):
         'ignoreerrors': True,
         'nooverwrites': True,
         'noprogress': True,
+        'retries': 5,
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info_dict = ydl.extract_info(channel_url, download=False)
         video_entries = info_dict.get('entries', [])
 
+        end_index = None if num_videos == 'all' else num_videos
         with open('video_links.txt', 'a', encoding='utf-8') as f:
-            for entry in video_entries[:num_videos]:
-                video_title = entry.get('title', 'unknown').replace("|","｜").replace("?","？")
+            for entry in video_entries[:end_index]:
+                video_title = entry.get('title', 'unknown').replace("|", "｜").replace("?", "？")
                 video_url = entry.get('webpage_url', 'unknown')
                 output_filename = f"{video_title}.mp3"
-                
                 
                 if os.path.exists(output_filename):
                     print(f"File '{output_filename}' already exists. Skipping...")
