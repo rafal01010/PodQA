@@ -34,10 +34,12 @@ audio_directory = "../yt-download"
 # Function to convert timestamps to SRT format
 def format_timestamp(seconds):
     hours = int(seconds // 3600)
-    minutes = int((seconds % 3600) // 60)
-    seconds = int(seconds % 60)
-    milliseconds = int((seconds - int(seconds)) * 1000)
-    return f"{hours:02d}:{minutes:02d}:{seconds:02d},{milliseconds:03d}"
+    remaining_after_hours = seconds % 3600
+    minutes = int(remaining_after_hours // 60)
+    remaining_after_minutes = remaining_after_hours % 60
+    seconds_int = int(remaining_after_minutes)
+    milliseconds = int(round((remaining_after_minutes - seconds_int) * 1000))
+    return f"{hours:02d}:{minutes:02d}:{seconds_int:02d},{milliseconds:03d}"
 
 # Process each audio file in the directory
 for audio_filename in os.listdir(audio_directory):
@@ -65,8 +67,9 @@ for audio_filename in os.listdir(audio_directory):
         # Prepare the SRT content
         srt_content = []
         for i, segment in enumerate(result["chunks"], start=1):
+            end_timestamp = segment["timestamp"][1] if segment["timestamp"][1] is not None else segment["timestamp"][0]
             start_time = format_timestamp(segment["timestamp"][0])
-            end_time = format_timestamp(segment["timestamp"][1])
+            end_time = format_timestamp(end_timestamp)
             
             text = segment["text"].strip()
             srt_content.append(f"{i}\n{start_time} --> {end_time}\n{text}\n\n")
