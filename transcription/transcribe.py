@@ -3,8 +3,8 @@ from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 import os
 import time
 
-device = "mps" if torch.backends.mps.is_available() else "cpu"
-torch_dtype = torch.float16 if torch.backends.mps.is_available() else torch.float32
+device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
+torch_dtype = torch.float16 if torch.backends.mps.is_available() or torch.cuda.is_available()  else torch.float32
 
 # model_id = "openai/whisper-large-v3-turbo"
 
