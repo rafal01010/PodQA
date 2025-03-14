@@ -27,11 +27,11 @@ pipe = pipeline(
     device=device,
     return_timestamps=True,
     chunk_length_s=30,
+    
 )
 
 audio_directory = "../yt-download"
 
-# Function to convert timestamps to SRT format
 def format_timestamp(seconds):
     hours = int(seconds // 3600)
     remaining_after_hours = seconds % 3600
@@ -41,41 +41,126 @@ def format_timestamp(seconds):
     milliseconds = int(round((remaining_after_minutes - seconds_int) * 1000))
     return f"{hours:02d}:{minutes:02d}:{seconds_int:02d},{milliseconds:03d}"
 
-# Process each audio file in the directory
+reprocess_list = []
+
 for audio_filename in os.listdir(audio_directory):
-    if audio_filename.endswith(('.mp3', '.wav', '.flac')):  # Add more formats if needed
+    reprocess = False
+    if audio_filename.endswith(('.mp3', '.wav', '.flac')):
         audio_path = os.path.join(audio_directory, audio_filename)
         
-        # Construct the SRT file path
         audio_base_name = os.path.splitext(audio_filename)[0]
         srt_file_path = os.path.join(audio_directory, f"{audio_base_name}.srt")
 
-        # Check if SRT file already exists
         if os.path.exists(srt_file_path):
             print(f"SRT file already exists for {audio_filename}. Skipping transcription.")
             continue
 
         print(f"Processing {audio_filename}")
         start_time = time.time()
-
         result = pipe(audio_path)
+        
 
         end_time = time.time()
         elapsed_time = end_time - start_time
         print(f"Elapsed time for {audio_filename}: {elapsed_time} seconds")
 
-        # Prepare the SRT content
         srt_content = []
-        for i, segment in enumerate(result["chunks"], start=1):
+        current_id = 1
+
+        for segment in result["chunks"]:
+            text = segment["text"].strip()
+            if not text:
+                continue
+
+            if len(text) > 10000:
+                reprocess= True
+                break
+            
+            start_timestamp = segment["timestamp"][0] if segment["timestamp"][0] is not None else segment["timestamp"][1]
             end_timestamp = segment["timestamp"][1] if segment["timestamp"][1] is not None else segment["timestamp"][0]
-            start_time = format_timestamp(segment["timestamp"][0])
+            start_time = format_timestamp(start_timestamp)
             end_time = format_timestamp(end_timestamp)
             
-            text = segment["text"].strip()
-            srt_content.append(f"{i}\n{start_time} --> {end_time}\n{text}\n\n")
-
-        # Save the SRT content to a file
+            srt_content.append(f"{current_id}\n{start_time} --> {end_time}\n{text}\n\n")
+            current_id += 1
+        if reprocess:
+            reprocess_list.append(audio_filename)
+            continue
         with open(srt_file_path, "w") as srt_file:
             srt_file.writelines(srt_content)
-
         print(f"SRT file saved to {srt_file_path}")
+
+if reprocess_list:
+
+    pipe = pipeline(
+        "automatic-speech-recognition",
+        model=model,
+        tokenizer=processor.tokenizer,
+        feature_extractor=processor.feature_extractor,
+        torch_dtype=torch_dtype,
+        device=device,
+        return_timestamps="word",
+        chunk_length_s=30,
+    )
+
+    for audio_filename in reprocess_list:
+        if audio_filename.endswith(('.mp3', '.wav', '.flac')):
+            audio_path = os.path.join(audio_directory, audio_filename)
+            
+            audio_base_name = os.path.splitext(audio_filename)[0]
+            srt_file_path = os.path.join(audio_directory, f"{audio_base_name}.srt")
+
+            if os.path.exists(srt_file_path):
+                print(f"SRT file already exists for {audio_filename}. Skipping transcription.")
+                continue
+
+            print(f"Processing {audio_filename}")
+            start_time = time.time()
+
+            result = pipe(audio_path)
+
+            srt_content = []
+            current_id = 1
+
+            current_segment_start = None
+            current_segment_end = None
+            current_segment_text = []
+
+            for segment in result["chunks"]:
+                word = segment["text"].strip()
+                start = segment["timestamp"][0] if segment["timestamp"][0] is not None else segment["timestamp"][1]
+                end = segment["timestamp"][1] if segment["timestamp"][1] is not None else segment["timestamp"][0]
+
+                if not word:
+                    continue
+
+                if current_segment_start is None:
+                    current_segment_start = start
+                    current_segment_end = end
+                    current_segment_text.append(word)
+                else:
+                    potential_duration = end - current_segment_start
+                    if potential_duration <= 15:
+                        current_segment_end = end
+                        current_segment_text.append(word)
+                    else:
+                        srt_content.append(
+                            f"{current_id}\n"
+                            f"{format_timestamp(current_segment_start)} --> {format_timestamp(current_segment_end)}\n"
+                            f"{' '.join(current_segment_text)}\n\n"
+                        )
+                        current_id += 1
+                        current_segment_start = start
+                        current_segment_end = end
+                        current_segment_text = [word]
+
+            if current_segment_text:
+                srt_content.append(
+                    f"{current_id}\n"
+                    f"{format_timestamp(current_segment_start)} --> {format_timestamp(current_segment_end)}\n"
+                    f"{' '.join(current_segment_text)}\n\n"
+                )
+
+            with open(srt_file_path, "w") as srt_file:
+                srt_file.writelines(srt_content)
+            print(f"SRT file saved to {srt_file_path}")

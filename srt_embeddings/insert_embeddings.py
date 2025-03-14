@@ -3,6 +3,8 @@ import os
 import glob
 from sentence_transformers import SentenceTransformer
 import torch
+import time
+import gc
 
 def parse_srt_file(srt_path):
     """Parse an SRT file and return a list of subtitle entries."""
@@ -36,8 +38,6 @@ def parse_srt_file(srt_path):
             })
         except (ValueError, IndexError) as e:
             print(f"Skipping invalid block in {srt_path}: {e}")
-            print(lines[1].strip())
-
             continue
             
     return entries
@@ -65,8 +65,8 @@ def main():
 
     device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using device: {device.upper()}")
-    batch_size = 32
-
+    
+    batch_size = 16
     model = SentenceTransformer(model_path).to(device)
 
 
@@ -92,7 +92,9 @@ def main():
         entries = parse_srt_file(srt_file)
 
         texts = [entry['text'] for entry in entries]
-        print("Starting embedding")
+
+        print(f"Starting embedding {srt_file}")
+        start_time = time.time()
         embeddings = model.encode(
             texts,
             batch_size=batch_size,
@@ -102,6 +104,9 @@ def main():
             normalize_embeddings=True
         )
         embeddings = embeddings.cpu().numpy()
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        print(f"Elapsed time for {srt_file}: {elapsed_time} seconds")
         
         for entry, embedding in zip(entries, embeddings):
             cur.execute('''INSERT INTO transcripts (
@@ -117,7 +122,13 @@ def main():
                 embedding.tobytes()
             ))
         
+        
         print(f"Inserted {len(entries)} entries from {os.path.basename(srt_file)}")
+        conn.commit()
+        del embeddings, entries
+        if device == "cuda":
+            torch.cuda.empty_cache()
+        gc.collect()
     
     conn.commit()
     conn.close()
