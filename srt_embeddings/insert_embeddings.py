@@ -1,6 +1,8 @@
 import sqlite3
 import os
 import glob
+from sentence_transformers import SentenceTransformer
+import torch
 
 def parse_srt_file(srt_path):
     """Parse an SRT file and return a list of subtitle entries."""
@@ -34,6 +36,8 @@ def parse_srt_file(srt_path):
             })
         except (ValueError, IndexError) as e:
             print(f"Skipping invalid block in {srt_path}: {e}")
+            print(lines[1].strip())
+
             continue
             
     return entries
@@ -52,15 +56,23 @@ def srt_time_to_seconds(time_str):
 
 def main():
     srt_directory = "../yt-download"
+    # model_path = "Alibaba-NLP/gte-modernbert-base"
+    model_path = "/Users/dave/AI/models/gte-modernbert-base"
 
     if not os.path.isdir(srt_directory):
         print(f"Error: {srt_directory} is not a valid directory")
         return
 
+    device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
+    print(f"Using device: {device.upper()}")
+    batch_size = 32
+
+    model = SentenceTransformer(model_path).to(device)
+
+
     conn = sqlite3.connect("transcripts.db")
     cur = conn.cursor()
 
-    # Find all SRT files in the directory
     srt_files = glob.glob(os.path.join(srt_directory, '*.srt'))
     
     if not srt_files:
@@ -78,18 +90,31 @@ def main():
             
         source_file_id = result[0]
         entries = parse_srt_file(srt_file)
+
+        texts = [entry['text'] for entry in entries]
+        print("Starting embedding")
+        embeddings = model.encode(
+            texts,
+            batch_size=batch_size,
+            device=device,
+            show_progress_bar=False,
+            convert_to_tensor=True,
+            normalize_embeddings=True
+        )
+        embeddings = embeddings.cpu().numpy()
         
-        for entry in entries:
+        for entry, embedding in zip(entries, embeddings):
             cur.execute('''INSERT INTO transcripts (
                 text, start_time, end_time, 
-                start_seconds, end_seconds, source_file_id
-            ) VALUES (?, ?, ?, ?, ?, ?)''', (
+                start_seconds, end_seconds, source_file_id, embedding
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)''', (
                 entry['text'],
                 entry['start_time'],
                 entry['end_time'],
                 entry['start_seconds'],
                 entry['end_seconds'],
-                source_file_id
+                source_file_id,
+                embedding.tobytes()
             ))
         
         print(f"Inserted {len(entries)} entries from {os.path.basename(srt_file)}")
