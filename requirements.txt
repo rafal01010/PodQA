@@ -17,3 +17,4 @@ accelerate
 # embeddings
 sentence-transformers
 pysrt
+lancedb

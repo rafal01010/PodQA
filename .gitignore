@@ -9,3 +9,4 @@ yt-download/video_links.txt
 
 # local files
 sandbox/
+srt_embeddings/transcripts_lancedb/

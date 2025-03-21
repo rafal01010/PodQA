@@ -1,4 +1,6 @@
-import sqlite3
+import lancedb
+import pyarrow as pa
+import pyarrow.compute as pc
 import os
 import glob
 from sentence_transformers import SentenceTransformer
@@ -7,7 +9,6 @@ import time
 import gc
 
 def parse_srt_file(srt_path):
-    """Parse an SRT file and return a list of subtitle entries."""
     entries = []
     with open(srt_path, 'r', encoding='utf-8') as f:
         content = f.read()
@@ -56,8 +57,9 @@ def srt_time_to_seconds(time_str):
 
 def main():
     srt_directory = "../yt-download"
-    # model_path = "Alibaba-NLP/gte-modernbert-base"
     model_path = "/Users/dave/AI/models/gte-modernbert-base"
+
+    db = lancedb.connect("./transcripts_lancedb")
 
     if not os.path.isdir(srt_directory):
         print(f"Error: {srt_directory} is not a valid directory")
@@ -69,27 +71,49 @@ def main():
     batch_size = 16
     model = SentenceTransformer(model_path).to(device)
 
-
-    conn = sqlite3.connect("transcripts.db")
-    cur = conn.cursor()
-
     srt_files = glob.glob(os.path.join(srt_directory, '*.srt'))
     
     if not srt_files:
         print(f"No SRT files found in {srt_directory}")
         return
+    
+    embedding_dimension = 768
+    transcripts_schema = pa.schema([
+        pa.field("file_name", pa.string()),
+        pa.field("video_url", pa.string()),
+        pa.field("text", pa.string()),
+        pa.field("start_time", pa.string()),
+        pa.field("end_time", pa.string()),
+        pa.field("start_seconds", pa.float64()),
+        pa.field("end_seconds", pa.float64()),
+        pa.field("embedding", pa.list_(pa.float32(), embedding_dimension))
+    ])
+
+    if "transcripts" not in db.table_names():
+        db.create_table("transcripts", schema=transcripts_schema)
+
+    
+    video_map = {}
+    with open('../yt-download/video_links.txt', 'r') as file:
+        for line in file:
+            stripped_line = line.strip()
+            if not stripped_line:
+                continue
+            
+            parts = stripped_line.split('\t')
+            if len(parts) != 2:
+                print(f"Skipping invalid line: {stripped_line}")
+                continue
+            
+            file_name, video_url = parts
+            video_map[file_name] = video_url
 
     for srt_file in srt_files:
-        base_name = os.path.splitext(os.path.basename(srt_file))[0]
-        cur.execute('SELECT id FROM source_files WHERE file_name = ?', (base_name,))
-        result = cur.fetchone()
-        
-        if not result:
-            print(f"Skipping {srt_file} - no matching entry in source_files")
-            continue
-            
-        source_file_id = result[0]
+
         entries = parse_srt_file(srt_file)
+        if not entries:
+            print(f"No valid entries found in {srt_file}")
+            continue
 
         texts = [entry['text'] for entry in entries]
 
@@ -103,35 +127,34 @@ def main():
             convert_to_tensor=True,
             normalize_embeddings=True
         )
-        embeddings = embeddings.cpu().numpy()
+        embeddings = embeddings.cpu().numpy().tolist()
         end_time = time.time()
         elapsed_time = end_time - start_time
         print(f"Elapsed time for {srt_file}: {elapsed_time} seconds")
-        
+
+        file_name = os.path.splitext(os.path.basename(srt_file))[0]
+        video_url = video_map.get(file_name, "")
+
+        records = []
         for entry, embedding in zip(entries, embeddings):
-            cur.execute('''INSERT INTO transcripts (
-                text, start_time, end_time, 
-                start_seconds, end_seconds, source_file_id, embedding
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)''', (
-                entry['text'],
-                entry['start_time'],
-                entry['end_time'],
-                entry['start_seconds'],
-                entry['end_seconds'],
-                source_file_id,
-                embedding.tobytes()
-            ))
-        
-        
-        print(f"Inserted {len(entries)} entries from {os.path.basename(srt_file)}")
-        conn.commit()
-        del embeddings, entries
-        if device == "cuda":
-            torch.cuda.empty_cache()
-        gc.collect()
-    
-    conn.commit()
-    conn.close()
+            records.append({
+                'file_name': file_name,
+                'video_url': video_url,
+                'text': entry['text'],
+                'start_time': entry['start_time'],
+                'end_time': entry['end_time'],
+                'start_seconds': entry['start_seconds'],
+                'end_seconds': entry['end_seconds'],
+                'embedding': embedding
+            })
+
+        table = pa.Table.from_pylist(records, schema=transcripts_schema)
+
+        transcripts_table = db.open_table("transcripts")
+        transcripts_table.add(table)
+        print(f"Inserted {len(records)} records from {srt_file}")
+
+    print("All files processed.")
 
 if __name__ == '__main__':
     main()
