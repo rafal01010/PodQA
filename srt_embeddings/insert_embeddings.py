@@ -57,6 +57,8 @@ def srt_time_to_seconds(time_str):
 
 def main():
     srt_directory = "../yt-download"
+
+    # Change model_path to local path or HF path
     model_path = "/Users/dave/AI/models/gte-modernbert-base"
 
     db = lancedb.connect("./transcripts_lancedb")
