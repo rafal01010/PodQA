@@ -88,7 +88,7 @@ for audio_filename in os.listdir(audio_directory):
                 potential_end = end
                 potential_duration = potential_end - current_segment_start
 
-                if potential_duration > 20:
+                if potential_duration > 70:
                     # Finalize current segment without this word
                     srt_content.append(
                         f"{current_id}\n"
@@ -109,7 +109,7 @@ for audio_filename in os.listdir(audio_directory):
                     ends_with_punct = word.endswith(('.', '!', '?'))
                     current_duration = current_segment_end - current_segment_start
                     
-                    if ends_with_punct and current_duration >= 10:
+                    if ends_with_punct and current_duration >= 60:
                         # Finalize segment
                         srt_content.append(
                             f"{current_id}\n"
