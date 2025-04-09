@@ -152,7 +152,7 @@ function App() {
           {session.messages.length === 0 ? (
             <div className="welcome-message">
               <h2>Welcome to PodQA</h2>
-              <p>Ask me anything about the podcast Trash Taste.</p>
+              <p>Ask me anything about the Trash Taste podcast.</p>
             </div>
           ) : (
             session.messages.map((chatMsg, index) => (
