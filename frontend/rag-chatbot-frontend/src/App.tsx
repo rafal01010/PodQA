@@ -143,7 +143,7 @@ function App() {
   return (
     <div className="app">
       <div className="sidebar">
-        <h1>RAG Chatbot</h1>
+        <h1>PodQA</h1>
         <button className="new-chat-btn" onClick={startNewChat}>New Chat</button>
       </div>
       
@@ -151,8 +151,8 @@ function App() {
         <div className="messages">
           {session.messages.length === 0 ? (
             <div className="welcome-message">
-              <h2>Welcome to RAG Chatbot</h2>
-              <p>Ask me anything about the content in your database.</p>
+              <h2>Welcome to PodQA</h2>
+              <p>Ask me anything about the podcast Trash Taste.</p>
             </div>
           ) : (
             session.messages.map((chatMsg, index) => (
