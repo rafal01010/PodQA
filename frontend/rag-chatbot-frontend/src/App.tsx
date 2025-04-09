@@ -29,6 +29,8 @@ function App() {
     messages: []
   });
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [expandedSource, setExpandedSource] = useState<string | null>(null);
+  const [openDropdowns, setOpenDropdowns] = useState<{[key: string]: boolean}>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Initialize session when component mounts
@@ -140,6 +142,42 @@ function App() {
     window.open(url, '_blank');
   };
 
+  const toggleSourceDropdown = (title: string) => {
+    setOpenDropdowns(prev => ({
+      ...prev,
+      [title]: !prev[title]
+    }));
+  };
+
+  const getTextPreview = (text: string, maxLength: number = 100) => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  };
+
+  const toggleFullText = (sourceKey: string) => {
+    if (expandedSource === sourceKey) {
+      setExpandedSource(null);
+    } else {
+      setExpandedSource(sourceKey);
+    }
+  };
+
+  // Group sources by title
+  const groupSourcesByTitle = (sources: Source[] | undefined) => {
+    if (!sources || sources.length === 0) return {};
+    
+    const grouped: {[title: string]: Source[]} = {};
+    
+    sources.forEach(source => {
+      if (!grouped[source.title]) {
+        grouped[source.title] = [];
+      }
+      grouped[source.title].push(source);
+    });
+    
+    return grouped;
+  };
+
   return (
     <div className="app">
       <div className="sidebar">
@@ -167,14 +205,74 @@ function App() {
                     <div className="sources-container">
                       <div className="sources-heading">Sources:</div>
                       <div className="sources-list">
-                        {chatMsg.sources.map((source, i) => (
-                          <div 
-                            key={i} 
-                            className="source-item"
-                            onClick={() => openSourceUrl(source.url)}
-                            title={source.text}
-                          >
-                            {source.title}
+                        {Object.entries(groupSourcesByTitle(chatMsg.sources)).map(([title, sources]) => (
+                          <div key={title} className="source-group">
+                            {sources.length === 1 ? (
+                              <div className="source-item single">
+                                <div 
+                                  className="source-title"
+                                  onClick={() => openSourceUrl(sources[0].url)}
+                                >
+                                  {title}
+                                </div>
+                                <div className="source-actions">
+                                  <button 
+                                    className="view-text-btn"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleFullText(`${index}-${title}-0`);
+                                    }}
+                                  >
+                                    {expandedSource === `${index}-${title}-0` ? 'Hide' : 'View Text'}
+                                  </button>
+                                </div>
+                                {expandedSource === `${index}-${title}-0` && (
+                                  <div className="source-full-text">
+                                    {sources[0].text}
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="source-item multiple">
+                                <div 
+                                  className="source-title with-dropdown" 
+                                  onClick={() => toggleSourceDropdown(title)}
+                                >
+                                  {title} ({sources.length})
+                                  <span className={`dropdown-arrow ${openDropdowns[title] ? 'open' : ''}`}>▼</span>
+                                </div>
+                                {openDropdowns[title] && (
+                                  <div className="source-dropdown">
+                                    {sources.map((source, i) => (
+                                      <div key={i} className="dropdown-item">
+                                        <div className="source-preview">
+                                          {getTextPreview(source.text)}
+                                        </div>
+                                        <div className="dropdown-actions">
+                                          <button
+                                            className="goto-url-btn"
+                                            onClick={() => openSourceUrl(source.url)}
+                                          >
+                                            Go to URL
+                                          </button>
+                                          <button 
+                                            className="view-text-btn"
+                                            onClick={() => toggleFullText(`${index}-${title}-${i}`)}
+                                          >
+                                            {expandedSource === `${index}-${title}-${i}` ? 'Hide' : 'View Text'}
+                                          </button>
+                                        </div>
+                                        {expandedSource === `${index}-${title}-${i}` && (
+                                          <div className="source-full-text">
+                                            {source.text}
+                                          </div>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>

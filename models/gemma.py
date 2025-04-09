@@ -86,7 +86,6 @@ class Gemma3:
                 When responding to queries:
                 - Answer questions accurately based on the context provided
                 - The provided context are 1 minute transcripts from the podcast episodes
-                - Try to use multiple contexts when generating a response but if the other contexts is irrelevant then do NOT force using other contexts
                 - Do NOT mention that you are answering based on the context
                 - Do NOT mention that you are using transcripts as context
                 - Do NOT cite sources or reference specific episodes/timestamps in your responses

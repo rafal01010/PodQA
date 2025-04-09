@@ -129,24 +129,123 @@ body {
 
 .sources-list {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.source-group {
+  margin-bottom: 6px;
 }
 
 .source-item {
   background-color: #222;
   color: #fff;
-  padding: 4px 8px;
   border-radius: 4px;
   font-size: 12px;
-  cursor: pointer;
   transition: all 0.2s;
   border: 1px solid #444;
+  width: fit-content;
+  min-width: 150px;
 }
 
-.source-item:hover {
+.source-item.single {
+  padding: 0;
+}
+
+.source-title {
+  padding: 6px 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.source-title:hover {
+  background-color: #333;
+}
+
+.source-title.with-dropdown {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-right: 8px;
+  width: 100%;
+}
+
+.dropdown-arrow {
+  font-size: 8px;
+  margin-left: 6px;
+  transition: transform 0.2s ease;
+}
+
+.dropdown-arrow.open {
+  transform: rotate(180deg);
+}
+
+.source-dropdown {
+  border-top: 1px solid #444;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.dropdown-item {
+  padding: 8px 10px;
+  border-bottom: 1px solid #333;
+}
+
+.dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.source-preview {
+  font-size: 11px;
+  color: #bbb;
+  margin-bottom: 6px;
+  line-height: 1.4;
+  max-height: 60px;
+  overflow: hidden;
+}
+
+.dropdown-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  gap: 6px;
+}
+
+.source-actions {
+  padding: 4px 8px;
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid #333;
+}
+
+.goto-url-btn, .view-text-btn {
   background-color: #333;
   color: #fff;
+  border: none;
+  border-radius: 3px;
+  padding: 4px 8px;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.goto-url-btn:hover, .view-text-btn:hover {
+  background-color: #444;
+}
+
+.source-full-text {
+  margin-top: 8px;
+  padding: 8px;
+  background-color: #1a1a1a;
+  border-radius: 3px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #ddd;
+  max-height: 200px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .input-form {
