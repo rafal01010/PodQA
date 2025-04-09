@@ -26,8 +26,9 @@ def rag_pipeline(
     """
     retrieved_contexts = retriever_function(query, embedding_model, table, top_k=top_k)
 
+    print(query)
+
     start_time = time.time()
-    print("gen start")
     response = generator.generate(
         query=query,
         retrieved_contexts=retrieved_contexts,
@@ -37,5 +38,19 @@ def rag_pipeline(
     elapsed_time = end_time - start_time
     print(f"Elapsed time for gen: {elapsed_time} seconds")
 
+    result = {}
+    result['response'] = response
     
-    return response
+    temp = {}
+    for context in retrieved_contexts:
+        if context['file_name'] not in temp:
+            temp[context['file_name']] = {}
+            temp[context['file_name']]['url'] = []
+            temp[context['file_name']]['text'] = []
+        video_id = context['video_url'].split('v=')[1]
+        temp[context['file_name']]['url'].append(f"https://youtu.be/{video_id}?t={int(context['start_seconds'])}")
+        temp[context['file_name']]['text'].append(context['text'])
+    
+    result['sources'] = temp
+    
+    return result

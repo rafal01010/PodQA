@@ -1,6 +1,9 @@
 import pandas as pd
 
-def retrieve_context(query, embedding_model, table, top_k=20, chunks_per_doc=1, max_docs=3):
+def retrieve_context(query, embedding_model, table, top_k=20, chunks_per_doc=5, max_docs=5):
+    query = query.split("Current question:")[1]
+    print("RETRIEVAL QUERY")
+    print(query)
     query_embedding = embedding_model.encode(query)
     
     results = table.search(query_embedding, vector_column_name="embedding").limit(top_k).to_pandas()

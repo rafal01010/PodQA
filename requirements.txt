@@ -18,3 +18,9 @@ accelerate
 sentence-transformers
 pysrt
 lancedb
+
+# backend
+fastapi
+uvicorn
+pydantic
+python-multipart

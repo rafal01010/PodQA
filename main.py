@@ -17,10 +17,10 @@ embedding_model = GteModernbert(embed_model_path)
 llm_path = "/Users/dave/AI/models/gemma-3-4b-it"
 generator = Gemma3(model_path=llm_path)
 
-for _ in range(3):
+for _ in range(1):
     user_in = input("Enter prompt: ")
 
-    response = rag_pipeline(
+    result = rag_pipeline(
         query=user_in,
         retriever_function=retrieve_context,
         generator=generator,
@@ -32,5 +32,8 @@ for _ in range(3):
         do_sample=True
     )
 
-    print("\nGenerated Response:")
-    print(response)
+    # print("\nGenerated Response:")
+    # print(result['response'])
+    # print(result['sources'])
+
+    
