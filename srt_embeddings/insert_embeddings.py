@@ -7,6 +7,7 @@ from sentence_transformers import SentenceTransformer
 import torch
 import time
 import gc
+import hashlib
 
 def parse_srt_file(srt_path):
     entries = []
@@ -81,6 +82,7 @@ def main():
     
     embedding_dimension = 768
     transcripts_schema = pa.schema([
+        pa.field("id", pa.string()),
         pa.field("file_name", pa.string()),
         pa.field("video_url", pa.string()),
         pa.field("text", pa.string()),
@@ -139,7 +141,11 @@ def main():
 
         records = []
         for entry, embedding in zip(entries, embeddings):
+            content_hash = hashlib.md5(entry['text'].encode('utf-8')).hexdigest()
+            unique_id = f"{file_name}_{content_hash}"
+            
             records.append({
+                'id': unique_id,
                 'file_name': file_name,
                 'video_url': video_url,
                 'text': entry['text'],
@@ -153,8 +159,8 @@ def main():
         table = pa.Table.from_pylist(records, schema=transcripts_schema)
 
         transcripts_table = db.open_table("transcripts")
-        transcripts_table.add(table)
-        print(f"Inserted {len(records)} records from {srt_file}")
+        transcripts_table.add_or_replace(table)
+        print(f"Upserted {len(records)} records from {srt_file}")
 
     print("All files processed.")
 
