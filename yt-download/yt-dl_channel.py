@@ -38,7 +38,7 @@ def download_mp3_from_channel(channel_url, num_videos, audio_quality='192'):
                 f.write(f"{video_title}\t{video_url}\n")
 
 if __name__ == "__main__":
-    channel_url = input("Enter the YouTube channel URL: ")
+    channel_url = input("Enter the YouTube channel videos URL (https://www.youtube.com/@<channel_name>/videos): ")
     num_videos_input = input("Enter the number of videos to download (or 'all' to download all videos): ")
     audio_quality_input = input("Enter the audio quality (e.g., 320 for 320 kbps) [default: 192]: ")
 
