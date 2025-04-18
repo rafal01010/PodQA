@@ -9,6 +9,7 @@ import time
 
 from models.gte_modernbert import GteModernbert
 from models.gemma import Gemma3
+from models.gte_reranker import GteReranker
 from rag.retrieval import retrieve_context
 from rag.rag_pipeline import rag_pipeline
 
@@ -27,8 +28,12 @@ device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is
 print(f"Using device: {device.upper()}")
 db = lancedb.connect("./srt_embeddings/transcripts_lancedb")
 table = db.open_table("transcripts")
+# embed_model_path = "Alibaba-NLP/gte-reranker-modernbert-base"
 embed_model_path = "/Users/dave/AI/models/gte-modernbert-base"
+# reranker_model_path = "Alibaba-NLP/gte-reranker-modernbert-base"
+reranker_model_path = "/Users/dave/AI/models/gte-reranker-modernbert-base"
 embedding_model = GteModernbert(embed_model_path)
+reranker_model = GteReranker(reranker_model_path)
 llm_path = "/Users/dave/AI/models/gemma-3-4b-it"
 generator = Gemma3(model_path=llm_path)
 
@@ -48,7 +53,6 @@ class ChatCompletionRequest(BaseModel):
     message: str
     temperature: float = 0.3
     max_new_tokens: int = 500
-    top_k: int = 20
 
 class ChatCompletionResponse(BaseModel):
     session_id: str
@@ -92,8 +96,8 @@ async def chat_completion(request: ChatCompletionRequest):
             retriever_function=retrieve_context,
             generator=generator,
             embedding_model=embedding_model,
+            reranker=reranker_model,
             table=table,
-            top_k=request.top_k,
             temperature=request.temperature,
             max_new_tokens=request.max_new_tokens,
             do_sample=True

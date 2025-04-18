@@ -5,8 +5,8 @@ def rag_pipeline(
     retriever_function,
     generator,
     embedding_model,
+    reranker,
     table,
-    top_k=5,
     **generator_kwargs
 ):
     """
@@ -18,13 +18,12 @@ def rag_pipeline(
         generator: Initialized Gemma3Generator instance
         embedding_model: The embedding model
         table: The database table
-        top_k: Number of contexts to retrieve
         **generator_kwargs: Additional keyword arguments for the generator
         
     Returns:
         Generated response
     """
-    retrieved_contexts = retriever_function(query, embedding_model, table, top_k=top_k)
+    retrieved_contexts = retriever_function(query, embedding_model, reranker, table,)
 
     print(query)
 

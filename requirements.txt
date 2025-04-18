@@ -13,6 +13,8 @@ transformers @ git+https://github.com/eustlb/transformers@whisper-pipeline-fix-w
 # transformers
 accelerate
 
+# pytorch
+torchvision
 
 # embeddings
 sentence-transformers

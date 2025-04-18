@@ -26,7 +26,6 @@ for _ in range(1):
         generator=generator,
         embedding_model=embedding_model,
         table=table,
-        top_k=20,
         temperature=0.3,
         max_new_tokens=500,
         do_sample=True
