@@ -53,11 +53,14 @@ class ChatCompletionRequest(BaseModel):
     message: str
     temperature: float = 0.3
     max_new_tokens: int = 500
+    use_query_rewriting: bool = True
 
 class ChatCompletionResponse(BaseModel):
     session_id: str
     message: Message
     sources: List[Source]
+    used_rewritten_query: Optional[bool] = False
+    rewritten_query: Optional[str] = None
 
 class ChatSession:
     def __init__(self, session_id: str):
@@ -88,11 +91,30 @@ async def chat_completion(request: ChatCompletionRequest):
     session.add_message("user", request.message)
     
     history_context = session.get_history_as_string()
-    augmented_query = f"Chat history:\n{history_context}\nCurrent question: {request.message}"
     
+    used_rewritten_query = False
+    rewritten_query = None
+    query = request.message
+    
+    if request.use_query_rewriting and len(session.history) > 1:
+        rewritten_query = generator.rewrite_query(
+            current_query=request.message,
+            conversation_history=history_context,
+            temperature=0.0
+        )
+        print(rewritten_query)
+        if rewritten_query != request.message:
+            query = rewritten_query
+            used_rewritten_query = True
+            print(f"Original query: '{request.message}'")
+            print(f"Rewritten query: '{rewritten_query}'")
+        else:
+            rewritten_query = None
+
     try:
         result = rag_pipeline(
-            query=augmented_query,
+            query=query,
+            conversation_history=history_context, 
             retriever_function=retrieve_context,
             generator=generator,
             embedding_model=embedding_model,
@@ -117,7 +139,9 @@ async def chat_completion(request: ChatCompletionRequest):
         return ChatCompletionResponse(
             session_id=session_id,
             message=Message(role="assistant", content=result['response']),
-            sources=sources
+            sources=sources,
+            used_rewritten_query=used_rewritten_query,
+            rewritten_query=rewritten_query if used_rewritten_query else None
         )
     
     except Exception as e:

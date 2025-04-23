@@ -91,7 +91,8 @@ function App() {
           message: input,
           temperature: 0.3,
           max_new_tokens: 500,
-          top_k: 20
+          top_k: 20,
+          use_query_rewriting: true
         }),
       });
 

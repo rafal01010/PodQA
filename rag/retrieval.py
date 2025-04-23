@@ -1,9 +1,9 @@
 import pandas as pd
 
 def retrieve_context(query, embedding_model, reranker, table, overfetch_multiplier=3, chunks_per_doc=3, max_docs=5):
-    query = query.split("Current question:")[1]
-    print("RETRIEVAL QUERY")
-    print(query)
+    # query = query.split("Current question:")[1]
+    # print("RETRIEVAL QUERY")
+    # print(query)
     query_embedding = embedding_model.encode(query)
 
     top_k = max_docs * chunks_per_doc * overfetch_multiplier
