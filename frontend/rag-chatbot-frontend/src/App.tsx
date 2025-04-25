@@ -32,6 +32,7 @@ function App() {
   const [expandedSource, setExpandedSource] = useState<string | null>(null);
   const [openDropdowns, setOpenDropdowns] = useState<{[key: string]: boolean}>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Initialize session when component mounts
   useEffect(() => {
@@ -66,6 +67,18 @@ function App() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [session.messages]);
+
+  
+
+  useEffect(() => {
+    // Only focus when loading changes from true to false (model finished responding)
+    if (isLoading === false) {
+      // Small timeout to ensure DOM updates are complete
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
+    }
+  }, [isLoading]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,6 +141,7 @@ function App() {
       }));
     } finally {
       setIsLoading(false);
+      inputRef.current?.focus();
     }
   };
 
@@ -298,13 +312,14 @@ function App() {
         </div>
         
         <form className="input-form" onSubmit={handleSendMessage}>
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask a question..."
-            disabled={isLoading}
-          />
+        <input
+          ref={inputRef}
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Ask a question..."
+          disabled={isLoading}
+        />
           <button type="submit" disabled={isLoading || !input.trim()}>
             Send
           </button>
