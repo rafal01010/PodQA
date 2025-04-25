@@ -90,7 +90,7 @@ function App() {
           session_id: session.sessionId,
           message: input,
           temperature: 0.3,
-          max_new_tokens: 500,
+          max_new_tokens: 1000,
           top_k: 20,
           use_query_rewriting: true
         }),

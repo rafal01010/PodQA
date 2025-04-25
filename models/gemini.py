@@ -1,52 +1,109 @@
-from transformers import AutoProcessor, Gemma3ForConditionalGeneration
 from typing import List, Dict, Any, Optional
-import torch
+import requests
+import os
+import json
 
-class Gemma3:
+class Gemini:
     _instance = None
     
-    def __new__(cls, model_path=None, device=None):
+    def __new__(cls, api_key=None, model_name=None):
         if cls._instance is None:
-            cls._instance = super(Gemma3, cls).__new__(cls)
+            cls._instance = super(Gemini, cls).__new__(cls)
             cls._instance.initialized = False
         return cls._instance
 
     def __init__(
         self,
-        model_path: str = "google/gemma-3-8b",
-        device: str = None
+        api_key: str = None,
+        model_name: str = "gemini-2.5-flash-preview-04-17"
     ):
         """
-        Initialize the Gemma 3 generator with model and processor.
+        Initialize the Gemini generator with API access.
         
         Args:
-            model_name: Hugging Face model identifier for Gemma 3
-            device: Device to run the model on ("cuda", "cpu", or "mps").
-                   If None, will auto-detect the best available device.
+            api_key: API key for accessing Gemini API. If None, will look for GEMINI_API_KEY in environment
+            model_name: Gemini model identifier to use (e.g., "gemini-2.5-flash-preview-04-17", "gemini-1.5-flash")
         """
         if not self.initialized:
-            if device is None:
-                if torch.cuda.is_available():
-                    device = "cuda"
-                elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
-                    device = "mps"
-                else:
-                    device = "cpu"
+            self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
+            if not self.api_key:
+                raise ValueError("No API key provided. Set GEMINI_API_KEY environment variable or pass api_key parameter.")
             
-            self.device = device
+            self.model_name = model_name
+            self.api_base_url = "https://generativelanguage.googleapis.com/v1beta/models"
             
-            self.use_bfloat16 = device in ["cuda", "mps"] and hasattr(torch, "bfloat16")
-            self.dtype = torch.bfloat16 if self.use_bfloat16 else torch.float32
-            
-            print(f"Loading Gemma 3 model: {model_path} on {device} with {self.dtype} precision")
-            self.processor = AutoProcessor.from_pretrained(model_path)
-            self.model = Gemma3ForConditionalGeneration.from_pretrained(model_path)
-            
-            self.model = self.model.to(device=self.device, dtype=self.dtype)
-                
-            print(f"Model loaded successfully on {device}")
+            print(f"Initialized Gemini API client for model: {model_name}")
             
             self.initialized = True
+    
+    def _call_api(self, messages, temperature=0.0, max_output_tokens=100, top_p=0.95, top_k=40, thinking_budget: int = 0):
+        """
+        Make an API call to the Gemini API.
+        
+        Args:
+            messages: List of message dictionaries to send to the API
+            temperature: Sampling temperature (0.0 to 1.0)
+            max_output_tokens: Maximum number of tokens to generate
+            top_p: Top-p sampling parameter
+            top_k: Top-k sampling parameter
+            thinking_budget: Budget for thinking time (Defaults to 0; added under generationConfig.thinkingConfig)
+            
+        Returns:
+            API response text or error message
+        """
+        # Build the URL without including the API key in any logging/error messages
+        url = f"{self.api_base_url}/{self.model_name}:generateContent"
+        
+        # Parameters for the request
+        params = {"key": self.api_key}
+        
+        generation_config = {
+            "temperature": temperature,
+            "maxOutputTokens": max_output_tokens,
+            "topP": top_p,
+            "topK": top_k,
+            "thinkingConfig": {
+                "thinkingBudget": thinking_budget
+            }
+        }
+
+        payload = {
+            "contents": messages,
+            "generationConfig": generation_config
+        }
+        
+        headers = {
+            "Content-Type": "application/json"
+        }
+        
+        try:
+            response = requests.post(url, params=params, headers=headers, data=json.dumps(payload))
+            response.raise_for_status()
+
+            result = response.json()
+            
+            if "candidates" in result and len(result["candidates"]) > 0:
+                candidate = result["candidates"][0]
+                if "content" in candidate and "parts" in candidate["content"]:
+                    for part in candidate["content"]["parts"]:
+                        if "text" in part:
+                            return part["text"]
+            
+            return "Error: Could not extract response text"
+            
+        except requests.exceptions.HTTPError as e:
+            status_code = e.response.status_code if hasattr(e, 'response') else 'unknown'
+            return f"API Error: Request failed with status code {status_code}. Please check your API configuration."
+        except requests.exceptions.ConnectionError:
+            return "API Error: Connection failed. Please check your internet connection and try again."
+        except requests.exceptions.Timeout:
+            return "API Error: Request timed out. Please try again later."
+        except requests.exceptions.RequestException:
+            return "API Error: Request failed. Please check your API configuration."
+        except json.JSONDecodeError:
+            return "API Error: Invalid response format received from the API."
+        except Exception as e:
+            return f"Error: An unexpected error occurred: {type(e).__name__}"
         
     def generate(
         self,
@@ -56,10 +113,11 @@ class Gemma3:
         temperature: float = 0.0,
         max_new_tokens: int = 100,
         system_prompt: Optional[str] = None,
-        do_sample: bool = False
+        do_sample: bool = False,
+        thinking_budget: int = 0
     ) -> str:
         """
-        Generate a response using Gemma 3 based on the query, conversation history and retrieved contexts.
+        Generate a response using Gemini based on the query, conversation history and retrieved contexts.
         
         Args:
             query: User query string
@@ -69,6 +127,7 @@ class Gemma3:
             max_new_tokens: Maximum number of tokens to generate
             system_prompt: Optional system prompt to guide the model behavior
             do_sample: Whether to use sampling for generation
+            thinking_budget: Budget for thinking time. Defaults to 0.
             
         Returns:
             Generated response as a string
@@ -111,52 +170,29 @@ class Gemma3:
             )
         
         user_message = f"Answer this question about Trash Taste: {query}"
+        print(conversation_history)
         if conversation_history:
             user_message = f"Conversation history:\n{conversation_history}\n\nAnswer the current question about Trash Taste: {query}"
-        
+
         messages = [
             {
-                "role": "system",
-                "content": [{"type": "text", "text": system_prompt}]
-            },
-            {
                 "role": "user",
-                "content": [
+                "parts": [
                     {
-                        "type": "text", 
-                        "text": f"Use this information (but never reference it):\n\n{combined_context}\n\n{user_message}"
+                        "text": f"System: {system_prompt}\n\nUse this information (but never reference it):\n\n{combined_context}\n\n{user_message}\n\nSystem: {system_prompt}"
                     }
                 ]
-            },
-            {
-                "role": "system",
-                "content": [{"type": "text", "text": system_prompt}]
-            },
+            }
         ]
         
-        inputs = self.processor.apply_chat_template(
-            messages,
-            add_generation_prompt=True,
-            tokenize=True,
-            return_dict=True,
-            return_tensors="pt"
-        ).to(self.device, dtype=self.dtype)
-        
-        input_len = inputs["input_ids"].shape[-1]
-        
-        with torch.inference_mode():
-            generation = self.model.generate(
-                **inputs,
-                max_new_tokens=max_new_tokens,
-                do_sample=do_sample,
-                temperature=temperature if do_sample else 1.0,
-                top_p=0.95 if do_sample else 1.0,
-                top_k=40 if do_sample else 0,
-                pad_token_id=self.processor.tokenizer.eos_token_id
-            )
-            generation = generation[0][input_len:]
-        
-        response = self.processor.decode(generation, skip_special_tokens=True)
+        response = self._call_api(
+            messages=messages,
+            temperature=temperature if do_sample else 0.0,
+            max_output_tokens=max_new_tokens,
+            top_p=0.95 if do_sample else 1.0,
+            top_k=40 if do_sample else 0,
+            thinking_budget=thinking_budget
+        )
         
         return response
     
@@ -165,12 +201,13 @@ class Gemma3:
         current_query: str,
         conversation_history: str,
         temperature: float = 0.0,
-        max_new_tokens: int = 100,
-        do_sample: bool = False
+        max_new_tokens: int = 1000,
+        do_sample: bool = False,
+        thinking_budget: int = 0
     ) -> str:
         """
         Rewrite an ambiguous or context-dependent query into a self-contained query
-        using the Gemma 3 model, based on conversation history string.
+        using the Gemini model, based on conversation history string.
         
         Args:
             current_query: The latest user query that may contain contextual references
@@ -178,6 +215,7 @@ class Gemma3:
             temperature: Sampling temperature (0.0 to 1.0)
             max_new_tokens: Maximum number of tokens to generate for the rewritten query
             do_sample: Whether to use sampling for generation
+            thinking_budget: Budget for thinking time. Defaults to 0.
             
         Returns:
             A rewritten query that is self-contained, or the original query if not context-dependent
@@ -186,7 +224,7 @@ class Gemma3:
         You are an AI assistant whose ONLY task is to decide whether the user's *current* query is context-dependent and, if so, rewrite it into a fully self-contained version. **Err on the side of rewriting**—when in doubt, expand the query.
         
         **Rewriting rules**
-        1. If the current query depends on previous messages (e.g. pronouns like “he”, “it”, “them”; adverbs like “here”, “there”; elliptical phrases like “tell me more”, “what about the second one?”), rewrite the query so that every reference becomes explicit. Keep the original wording and tone as much as possible.
+        1. If the current query depends on previous messages (e.g. pronouns like "he", "it", "them"; adverbs like "here", "there"; elliptical phrases like "tell me more", "what about the second one?"), rewrite the query so that every reference becomes explicit. Keep the original wording and tone as much as possible.
         2. If—and only if—the current query is **already fully self-contained**, return it unchanged.
         3. Output **exactly one line** containing **only** the final query—no prefixes, quotes, or commentary.
         
@@ -234,38 +272,24 @@ class Gemma3:
         
         messages = [
             {
-                "role": "system",
-                "content": [{"type": "text", "text": system_prompt}]
-            },
-            {
                 "role": "user",
-                "content": [{"type": "text", "text": user_message}]
+                "parts": [
+                    {
+                        "text": f"{system_prompt}\n\n{user_message}"
+                    }
+                ]
             }
         ]
         
-        inputs = self.processor.apply_chat_template(
-            messages,
-            add_generation_prompt=True,
-            tokenize=True,
-            return_dict=True,
-            return_tensors="pt"
-        ).to(self.device, dtype=self.dtype)
+        rewritten_query = self._call_api(
+            messages=messages,
+            temperature=temperature if do_sample else 0.0,
+            max_output_tokens=max_new_tokens,
+            top_p=0.95 if do_sample else 1.0,
+            top_k=40 if do_sample else 0,
+            thinking_budget=thinking_budget
+        )
         
-        input_len = inputs["input_ids"].shape[-1]
-        
-        with torch.inference_mode():
-            generation = self.model.generate(
-                **inputs,
-                max_new_tokens=max_new_tokens,
-                do_sample=do_sample,
-                temperature=temperature if do_sample else 1.0,
-                top_p=0.95 if do_sample else 1.0,
-                top_k=40 if do_sample else 0,
-                pad_token_id=self.processor.tokenizer.eos_token_id
-            )
-            generation = generation[0][input_len:]
-        
-        rewritten_query = self.processor.decode(generation, skip_special_tokens=True)
         rewritten_query = rewritten_query.strip()
         
         return rewritten_query

@@ -1,4 +1,5 @@
 import uuid
+import os
 from typing import List, Dict, Optional
 from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException
@@ -9,6 +10,7 @@ import time
 
 from models.gte_modernbert import GteModernbert
 from models.gemma import Gemma3
+from models.gemini import Gemini  # Import the new Gemini class
 from models.gte_reranker import GteReranker
 from rag.retrieval import retrieve_context
 from rag.rag_pipeline import rag_pipeline
@@ -34,8 +36,21 @@ embed_model_path = "/Users/dave/AI/models/gte-modernbert-base"
 reranker_model_path = "/Users/dave/AI/models/gte-reranker-modernbert-base"
 embedding_model = GteModernbert(embed_model_path)
 reranker_model = GteReranker(reranker_model_path)
+
+gemini_api_key = os.environ.get("GEMINI_API_KEY")
+gemini_model_name = os.environ.get("GEMINI_MODEL_NAME", "gemini-2.5-flash-preview-04-17")
 llm_path = "/Users/dave/AI/models/gemma-3-4b-it"
-generator = Gemma3(model_path=llm_path)
+
+if gemini_api_key:
+    try:
+        generator = Gemini(api_key=gemini_api_key, model_name=gemini_model_name)
+        print(f"Successfully initialized Gemini using API with model: {gemini_model_name}")
+    except Exception as e:
+        print(f"Failed to initialize Gemini: {str(e)}. Falling back to Gemma3.")
+        generator = Gemma3(model_path=llm_path)
+else:
+    print("No Gemini API key found. Using local Gemma3 model.")
+    generator = Gemma3(model_path=llm_path)
 
 chat_sessions = {}
 
@@ -52,7 +67,7 @@ class ChatCompletionRequest(BaseModel):
     session_id: Optional[str] = None
     message: str
     temperature: float = 0.3
-    max_new_tokens: int = 500
+    max_new_tokens: int = 1000
     use_query_rewriting: bool = True
 
 class ChatCompletionResponse(BaseModel):
