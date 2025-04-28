@@ -51,11 +51,7 @@ class Gemini:
         Returns:
             API response text or error message
         """
-        # Build the URL without including the API key in any logging/error messages
         url = f"{self.api_base_url}/{self.model_name}:generateContent"
-        
-        # Parameters for the request
-        params = {"key": self.api_key}
         
         generation_config = {
             "temperature": temperature,
@@ -73,11 +69,12 @@ class Gemini:
         }
         
         headers = {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "x-goog-api-key": self.api_key
         }
         
         try:
-            response = requests.post(url, params=params, headers=headers, data=json.dumps(payload))
+            response = requests.post(url, headers=headers, data=json.dumps(payload))
             response.raise_for_status()
 
             result = response.json()
