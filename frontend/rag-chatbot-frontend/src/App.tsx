@@ -22,6 +22,97 @@ interface ChatSession {
   messages: ChatMessage[];
 }
 
+// Helper function to properly convert YouTube URL to embedded format
+const getYouTubeEmbedUrl = (url: string): string | null => {
+  try {
+    // Check if it's a YouTube URL
+    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+      let embedUrl = '';
+      
+      // Parse URL to get all parameters
+      const urlObj = new URL(url);
+      const searchParams = new URLSearchParams(urlObj.search);
+      
+      // For youtube.com/watch URLs
+      if (url.includes('youtube.com/watch')) {
+        // Get video ID
+        const videoId = searchParams.get('v');
+        if (!videoId) return null;
+        
+        // Start with base embed URL
+        embedUrl = `https://www.youtube.com/embed/${videoId}`;
+        
+        // Create new search params for the embed URL
+        const embedParams = new URLSearchParams();
+        
+        // Copy important parameters (especially timestamp)
+        if (searchParams.has('t')) embedParams.append('start', searchParams.get('t')!.replace('s', ''));
+        if (searchParams.has('list')) embedParams.append('list', searchParams.get('list')!);
+        
+        // Add parameters to embed URL if any exist
+        const paramString = embedParams.toString();
+        if (paramString) {
+          embedUrl += '?' + paramString;
+        }
+      }
+      // For youtu.be short URLs
+      else if (url.includes('youtu.be/')) {
+        // Extract video ID from path
+        const pathParts = urlObj.pathname.split('/');
+        const videoId = pathParts[pathParts.length - 1];
+        
+        // Start with base embed URL
+        embedUrl = `https://www.youtube.com/embed/${videoId}`;
+        
+        // Create new search params for the embed URL
+        const embedParams = new URLSearchParams();
+        
+        // Copy important parameters (especially timestamp)
+        if (searchParams.has('t')) embedParams.append('start', searchParams.get('t')!.replace('s', ''));
+        
+        // Add parameters to embed URL if any exist
+        const paramString = embedParams.toString();
+        if (paramString) {
+          embedUrl += '?' + paramString;
+        }
+      }
+      
+      return embedUrl || null;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error parsing YouTube URL:", error);
+    return null;
+  }
+};
+
+// YouTube Embed Component
+const YouTubeEmbed: React.FC<{ embedUrl: string, onClose: () => void }> = ({ embedUrl, onClose }) => {
+  // Append autoplay parameter to the URL
+  const autoplayUrl = embedUrl.includes('?') ? 
+    `${embedUrl}&autoplay=1` : 
+    `${embedUrl}?autoplay=1`;
+  
+  return (
+    <div className="youtube-embed-container">
+      <div className="youtube-embed-header">
+        <h3>YouTube Video</h3>
+        <button className="close-embed-btn" onClick={onClose}>×</button>
+      </div>
+      <iframe 
+        width="100%" 
+        height="315" 
+        src={autoplayUrl}
+        title="YouTube video player" 
+        frameBorder="0" 
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+        allowFullScreen>
+      </iframe>
+    </div>
+  );
+};
+
+
 function App() {
   const [input, setInput] = useState<string>('');
   const [session, setSession] = useState<ChatSession>({
@@ -31,6 +122,8 @@ function App() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [expandedSource, setExpandedSource] = useState<string | null>(null);
   const [openDropdowns, setOpenDropdowns] = useState<{[key: string]: boolean}>({});
+  // New state for tracking embedded videos
+  const [embeddedVideo, setEmbeddedVideo] = useState<{messageIndex: number, sourceTitle: string, sourceIndex: number, embedUrl: string} | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -67,8 +160,6 @@ function App() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [session.messages]);
-
-  
 
   useEffect(() => {
     // Only focus when loading changes from true to false (model finished responding)
@@ -151,10 +242,38 @@ function App() {
       sessionId: '',
       messages: []
     });
+    setEmbeddedVideo(null);
+    setOpenDropdowns({});
+    setExpandedSource(null);
   };
 
-  const openSourceUrl = (url: string) => {
-    window.open(url, '_blank');
+  // Modified to embed video with original URL
+  const handleVideoSource = (url: string, messageIndex: number, sourceTitle: string, sourceIndex: number) => {
+    const embedUrl = getYouTubeEmbedUrl(url);
+    if (embedUrl) {
+      // If a video is already embedded with the same details, close it
+      if (embeddedVideo && 
+          embeddedVideo.messageIndex === messageIndex && 
+          embeddedVideo.sourceTitle === sourceTitle &&
+          embeddedVideo.sourceIndex === sourceIndex) {
+        setEmbeddedVideo(null);
+      } else {
+        // Otherwise, embed the new video
+        setEmbeddedVideo({
+          messageIndex,
+          sourceTitle,
+          sourceIndex,
+          embedUrl
+        });
+      }
+    } else {
+      // If not a YouTube URL, open in new tab as fallback
+      window.open(url, '_blank');
+    }
+  };
+
+  const closeEmbeddedVideo = () => {
+    setEmbeddedVideo(null);
   };
 
   const toggleSourceDropdown = (title: string) => {
@@ -226,11 +345,23 @@ function App() {
                               <div className="source-item single">
                                 <div 
                                   className="source-title"
-                                  onClick={() => openSourceUrl(sources[0].url)}
+                                  onClick={() => handleVideoSource(sources[0].url, index, title, 0)}
                                 >
                                   {title}
                                 </div>
                                 <div className="source-actions">
+                                  <button 
+                                    className="video-btn"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleVideoSource(sources[0].url, index, title, 0);
+                                    }}
+                                  >
+                                    {embeddedVideo && 
+                                     embeddedVideo.messageIndex === index && 
+                                     embeddedVideo.sourceTitle === title &&
+                                     embeddedVideo.sourceIndex === 0 ? 'Hide Video' : 'Watch Video'}
+                                  </button>
                                   <button 
                                     className="view-text-btn"
                                     onClick={(e) => {
@@ -245,6 +376,15 @@ function App() {
                                   <div className="source-full-text">
                                     {sources[0].text}
                                   </div>
+                                )}
+                                {embeddedVideo && 
+                                 embeddedVideo.messageIndex === index && 
+                                 embeddedVideo.sourceTitle === title &&
+                                 embeddedVideo.sourceIndex === 0 && (
+                                  <YouTubeEmbed 
+                                    embedUrl={embeddedVideo.embedUrl} 
+                                    onClose={closeEmbeddedVideo} 
+                                  />
                                 )}
                               </div>
                             ) : (
@@ -265,10 +405,13 @@ function App() {
                                         </div>
                                         <div className="dropdown-actions">
                                           <button
-                                            className="goto-url-btn"
-                                            onClick={() => openSourceUrl(source.url)}
+                                            className="video-btn"
+                                            onClick={() => handleVideoSource(source.url, index, title, i)}
                                           >
-                                            Go to URL
+                                            {embeddedVideo && 
+                                             embeddedVideo.messageIndex === index && 
+                                             embeddedVideo.sourceTitle === title &&
+                                             embeddedVideo.sourceIndex === i ? 'Hide Video' : 'Watch Video'}
                                           </button>
                                           <button 
                                             className="view-text-btn"
@@ -281,6 +424,15 @@ function App() {
                                           <div className="source-full-text">
                                             {source.text}
                                           </div>
+                                        )}
+                                        {embeddedVideo && 
+                                         embeddedVideo.messageIndex === index && 
+                                         embeddedVideo.sourceTitle === title &&
+                                         embeddedVideo.sourceIndex === i && (
+                                          <YouTubeEmbed 
+                                            embedUrl={embeddedVideo.embedUrl} 
+                                            onClose={closeEmbeddedVideo} 
+                                          />
                                         )}
                                       </div>
                                     ))}
