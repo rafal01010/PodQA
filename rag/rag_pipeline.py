@@ -26,7 +26,11 @@ def rag_pipeline(
     Returns:
         Dictionary containing response and source information
     """
+    start_time = time.time()
     retrieved_contexts = retriever_function(query, embedding_model, reranker, table)
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print(f"Elapsed time for retrieval: {elapsed_time} seconds")
 
     start_time = time.time()
     response = generator.generate(
