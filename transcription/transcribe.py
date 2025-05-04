@@ -1,37 +1,3 @@
-import torch
-from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
-import os
-import time
-
-device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
-torch_dtype = torch.bfloat16 if torch.backends.mps.is_available() or torch.cuda.is_available()  else torch.float32
-
-# model_id = "openai/whisper-large-v3-turbo"
-
-# Can change to local model path
-model_id = "/Users/dave/AI/models/whisper-large-v3-turbo"
-
-model = AutoModelForSpeechSeq2Seq.from_pretrained(
-    model_id, torch_dtype=torch_dtype, low_cpu_mem_usage=True, use_safetensors=True
-)
-model.to(device)
-
-processor = AutoProcessor.from_pretrained(model_id)
-
-pipe = pipeline(
-    "automatic-speech-recognition",
-    model=model,
-    tokenizer=processor.tokenizer,
-    feature_extractor=processor.feature_extractor,
-    torch_dtype=torch_dtype,
-    device=device,
-    return_timestamps="word",
-    chunk_length_s=30,
-    
-)
-
-audio_directory = "../yt-download"
-
 def format_timestamp(seconds):
     hours = int(seconds // 3600)
     remaining_after_hours = seconds % 3600
@@ -97,8 +63,8 @@ for audio_filename in os.listdir(audio_directory):
             current_segment_end = None
             segment_duration = 0
             
-            # Build segment until we hit the duration limit (70 seconds)
-            while segment_index < len(all_segments) and segment_duration <= 70:
+            # Build segment until we hit the duration limit (220 seconds)
+            while segment_index < len(all_segments) and segment_duration <= 220:
                 segment = all_segments[segment_index]
                 current_segment_text.append(segment["word"])
                 current_segment_end = segment["end"]
@@ -106,14 +72,14 @@ for audio_filename in os.listdir(audio_directory):
                 
                 # Check if we should end this segment
                 ends_with_punct = segment["ends_with_punct"]
-                if ends_with_punct and segment_duration >= 60:
+                if ends_with_punct and segment_duration >= 210:
                     segment_index += 1  # Move to next word for the next segment
                     break
                 
                 segment_index += 1
             
             # If we ran out of segments or didn't find a good end point
-            if segment_index >= len(all_segments) or segment_duration > 70:
+            if segment_index >= len(all_segments) or segment_duration > 220:
                 # Just end at the last processed word
                 pass
             

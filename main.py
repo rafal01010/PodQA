@@ -4,11 +4,14 @@ from models.gte_modernbert import GteModernbert
 from models.gemma import Gemma3
 from rag.retrieval import retrieve_context
 from rag.rag_pipeline import rag_pipeline
+import os
 
 device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Using device: {device.upper()}")
 
-db = lancedb.connect("./srt_embeddings/transcripts_lancedb")
+current_dir = os.path.dirname(os.path.abspath(__file__))
+db = lancedb.connect(os.path.join(current_dir, "srt_embeddings","transcripts_lancedb"))
+
 table = db.open_table("transcripts")
 
 embed_model_path = "/Users/dave/AI/models/gte-modernbert-base"

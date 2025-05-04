@@ -28,9 +28,10 @@ app.add_middleware(
 
 device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Using device: {device.upper()}")
-db = lancedb.connect("./srt_embeddings/transcripts_lancedb")
+current_dir = os.path.dirname(os.path.abspath(__file__))
+db = lancedb.connect(os.path.join(current_dir, "srt_embeddings","transcripts_lancedb"))
 table = db.open_table("transcripts")
-# embed_model_path = "Alibaba-NLP/gte-reranker-modernbert-base"
+# embed_model_path = "Alibaba-NLP/gte-modernbert-base"
 embed_model_path = "/Users/dave/AI/models/gte-modernbert-base"
 # reranker_model_path = "Alibaba-NLP/gte-reranker-modernbert-base"
 reranker_model_path = "/Users/dave/AI/models/gte-reranker-modernbert-base"

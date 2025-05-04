@@ -55,10 +55,13 @@ def srt_time_to_seconds(time_str):
 
 
 def main():
-    srt_directory = "../yt-download"
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    parent_dir = os.path.dirname(current_dir)
+    srt_directory = os.path.join(parent_dir, "yt-download")
+
     model_path = "/Users/dave/AI/models/gte-modernbert-base"
 
-    db = lancedb.connect("./transcripts_lancedb")
+    db = lancedb.connect(os.path.join(current_dir, "transcripts_lancedb"))
 
     device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using device: {device.upper()}")
@@ -88,7 +91,8 @@ def main():
         transcripts_table = db.open_table("transcripts")
 
     video_map = {}
-    with open('../yt-download/video_links.txt', 'r') as file:
+    video_links_path = os.path.join(parent_dir, "yt-download", "video_links.txt")
+    with open(video_links_path, 'r') as file:
         for line in file:
             parts = line.strip().split('\t')
             if len(parts) == 2:
@@ -99,7 +103,8 @@ def main():
         if not entries:
             continue
 
-        texts = [entry['text'] for entry in entries]
+        file_name = os.path.splitext(os.path.basename(srt_file))[0]
+        texts = [f"{file_name}\n\n{entry['text']}" for entry in entries]
         embeddings = model.encode(
             texts,
             batch_size=batch_size,
@@ -109,7 +114,7 @@ def main():
             normalize_embeddings=True
         ).cpu().numpy().tolist()
 
-        file_name = os.path.splitext(os.path.basename(srt_file))[0]
+        
         video_url = video_map.get(file_name, "")
 
         records = []
