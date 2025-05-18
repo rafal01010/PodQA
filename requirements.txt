@@ -20,6 +20,7 @@ torchvision
 sentence-transformers
 pysrt
 lancedb
+pylate
 
 # backend
 fastapi
