@@ -1,5 +1,6 @@
 import os
 import lancedb
+import time
 
 
 def main():
@@ -13,13 +14,7 @@ def main():
     transcripts_table.create_scalar_index("id", replace=True)
     transcripts_table.create_fts_index("text", replace=True, use_tantivy=False)
     transcripts_table.create_index(metric='cosine', vector_column_name='embedding')
-    # transcripts_table.create_index(metric='cosine', vector_column_name='multivector_embedding')
-    
-
-
-
-
-
+    transcripts_table.create_index(metric='cosine', vector_column_name='multivector_embedding')
 
 if __name__ == '__main__':
     main()

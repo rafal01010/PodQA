@@ -126,9 +126,9 @@ def main():
             .when_not_matched_insert_all() \
             .execute(records)
 
-        transcripts_table.optimize()
         print(f"Processed {len(records)} records from {srt_file}")
 
+    transcripts_table.optimize()
     print("All files processed.")
 
 if __name__ == '__main__':
