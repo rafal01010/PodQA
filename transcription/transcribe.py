@@ -1,3 +1,37 @@
+import torch
+from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
+import os
+import time
+
+device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
+torch_dtype = torch.bfloat16 if torch.backends.mps.is_available() or torch.cuda.is_available()  else torch.float32
+
+# model_id = "openai/whisper-large-v3-turbo"
+
+# Can change to local model path
+model_id = "/Users/dave/AI/models/whisper-large-v3-turbo"
+
+model = AutoModelForSpeechSeq2Seq.from_pretrained(
+    model_id, torch_dtype=torch_dtype, low_cpu_mem_usage=True, use_safetensors=True
+)
+model.to(device)
+
+processor = AutoProcessor.from_pretrained(model_id)
+
+pipe = pipeline(
+    "automatic-speech-recognition",
+    model=model,
+    tokenizer=processor.tokenizer,
+    feature_extractor=processor.feature_extractor,
+    torch_dtype=torch_dtype,
+    device=device,
+    return_timestamps="word",
+    chunk_length_s=30,
+    
+)
+
+audio_directory = "../yt-download"
+
 def format_timestamp(seconds):
     hours = int(seconds // 3600)
     remaining_after_hours = seconds % 3600
