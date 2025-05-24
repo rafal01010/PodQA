@@ -8,11 +8,8 @@ import torch
 import lancedb
 import time
 
-from models.gte_modernbert import GteModernbert
 from models.gemma import Gemma3
-from models.gemini import Gemini  # Import the new Gemini class
-from models.gte_reranker import GteReranker
-from rag.retrieval import retrieve_context
+from models.gemini import Gemini
 from rag.rag_pipeline import rag_pipeline
 
 app = FastAPI(title="RAG Chatbot API")
@@ -34,10 +31,8 @@ db = lancedb.connect(os.path.join(parent_dir, "srt_embeddings","transcripts_lanc
 table = db.open_table("transcripts")
 # embed_model_path = "Alibaba-NLP/gte-modernbert-base"
 embed_model_path = "/Users/dave/AI/models/gte-modernbert-base"
-# reranker_model_path = "Alibaba-NLP/gte-reranker-modernbert-base"
-reranker_model_path = "/Users/dave/AI/models/gte-reranker-modernbert-base"
-embedding_model = GteModernbert(embed_model_path)
-reranker_model = GteReranker(reranker_model_path)
+modern_colbert_path = "/Users/dave/AI/models/GTE-ModernColBERT-v1"
+
 
 gemini_api_key = os.environ.get("GEMINI_API_KEY")
 gemini_model_name = os.environ.get("GEMINI_MODEL_NAME", "gemini-2.5-flash-preview-04-17")
@@ -132,10 +127,10 @@ async def chat_completion(request: ChatCompletionRequest):
         result = rag_pipeline(
             query=query,
             conversation_history=history_context, 
-            retriever_function=retrieve_context,
             generator=generator,
-            embedding_model=embedding_model,
-            reranker=reranker_model,
+            # embedding_model_path=embed_model_path,
+            modern_colbert_path=modern_colbert_path,
+            retrieve_type="colbert",
             table=table,
             temperature=request.temperature,
             max_new_tokens=request.max_new_tokens,

@@ -22,7 +22,6 @@ class GteModernbert:
             self.initialized = True
     
     def encode(self, query, convert_to_tensor=True):
-        """Encode the input query to embeddings"""
         query_embedding = self.model.encode(query, device=self.device, convert_to_tensor=convert_to_tensor)
         if convert_to_tensor:
             return query_embedding.cpu().numpy()
