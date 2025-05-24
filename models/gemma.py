@@ -88,6 +88,9 @@ class Gemma3:
                 When responding to queries:
                 - Answer questions accurately based on the context provided
                 - The provided context are 1 minute transcripts from the podcast episodes
+                - For each context, the first line contains the title of the episode on where the transcript or information is from
+                - For episodes with guests the first or the title will also contain the name of the guest usually in parentheses (ft. name of guest)
+                - If the question is about finding a specific episode you can use the first line of the context because it contains the title of the episode on where the transcript is from
                 - NEVER use phrases like "based on the context" or "according to the transcripts"
                 - NEVER cite sources or reference specific episodes/timestamps
                 - Do NOT mention that you are answering based on the context
