@@ -35,7 +35,8 @@ modern_colbert_path = "/Users/dave/AI/models/GTE-ModernColBERT-v1"
 
 
 gemini_api_key = os.environ.get("GEMINI_API_KEY")
-gemini_model_name = os.environ.get("GEMINI_MODEL_NAME", "gemini-2.5-flash-preview-04-17")
+gemini_model_name = os.environ.get("GEMINI_MODEL_NAME", "gemini-2.5-flash-preview-05-20")
+
 llm_path = "/Users/dave/AI/models/gemma-3-4b-it"
 
 if gemini_api_key:
@@ -128,9 +129,9 @@ async def chat_completion(request: ChatCompletionRequest):
             query=query,
             conversation_history=history_context, 
             generator=generator,
-            # embedding_model_path=embed_model_path,
+            embedding_model_path=embed_model_path,
             modern_colbert_path=modern_colbert_path,
-            retrieve_type="colbert",
+            retrieve_type="hybrid",
             table=table,
             temperature=request.temperature,
             max_new_tokens=request.max_new_tokens,

@@ -1,0 +1,158 @@
+PodQA Evaluation Questions
+
+1. What did they say about buying something so sus the government comes after you?
+2. Who was the anime YouTuber who killed his family?
+3. Did they talk about how easy is it actually to make meth?
+4. What was the episode where they say that jacksepticeye is a better anime analyst than Trash Taste?
+5. What happened when Emirichu’s anime taste got roasted by Trash Taste?
+6. How did Connor accidentally become a chess pro?
+7. What is the real scientific way to dispose of a dead body?
+8. What did they say about Michael being the only one without an Engineering degree?
+9. What did they say after watching Mushoku Tensei?
+10. How hard is hentai voice acting?
+11. How easy is it to get into One Piece?
+12. What did they say about american food?
+13. Can you ask the government permission to make Uranium glass?
+14. How does Connor know the Hit or Miss TikTok girl?
+15. When did Connor got hit on by a fan’s mom?
+16. What are the anime series that wasted the Trash Taste members’ time?
+17. Is Sydney patriotic?
+18. What did Moist Critical say about Jojo’s Bizarre Adventure?
+19. What pizza does the Trash Taste members like?
+20. How does Trash Taste describe the Filthy Frank era?
+21. What are Japan’s most cursed adult toys?
+22. Why does Trash Taste not watch anime anymore?
+23. Why do Japanese people ignore the laws?
+24. What episode did they talk about the Fate franchise?
+25. What are anime that made Trash Taste cry like crazy?
+26. What did Mori Calliope say about Moist Critical?
+27. Why did Joey and Garnt use to hate each other?
+28. Why did Trash Taste say Japanese cancel culture on another level?
+29. What are their Discord meetup horror stories?
+30. How did Joey and Aki meet?
+31. Does Joey speak better Japanese than Japanese people?
+32. Did Garnt use to be a real monk?
+33. Why did sydsnap fight leafyishere?
+34. What are trash taste’s opinion on the Naruto fanbase?
+35. What happened when Connor went to dinner with Aki’s parents?
+36. Elaborate on their discussion where they said Americans are a different species of human.
+37. What are their difficulties with dating as a YouTuber?
+38. Why does Trash Taste think American Food is disgusting?
+39. What was their story on leaving food on your plate in Japan?
+40. Who burned himself with acid while filming a video?
+41. Why did they say Baki is crazier than Jojo?
+42. Why did they say japanese host clubs are terrifying?
+43. How did Isayama spoil the Attack on Titan ending?
+44. Describe Connor’s disgusting taste on anime.
+45. What are the hentai tags that they rate the best?
+46. Do Trash Taste members speak different English with Japanese people?
+47. Why is renting an apartment in Japan impossible?
+48. Why are sleep streams dangerous?
+49. What are their opinions on burgers?
+50. Why was Connor’s roommate a psycho?
+
+Hybrid Results (34 out of 50 episodes retrieved) (20 out of the 34 are the highest scored episode)
+1. X
+2. 1st
+3. 1st
+4. 2nd
+5. X
+6. X
+7. 1st
+8. 1st
+9. 2nd 
+10. 1st
+11. 5th
+12. X
+13. 1st
+14. X
+15. 1st
+16. X
+17. 1st
+18. 1st
+19. 1st
+20. X
+21. X
+22. X
+23. 1st
+24. 1st
+25. 2nd
+26. 1st
+27. 3rd
+28. X
+29. 1st
+30. X
+31. X
+32. 1st
+33. X
+34. X
+35. 1st
+36. 3rd
+37. 2nd
+38. X
+39. 1st
+40. 1st
+41. 1st
+42. 3rd
+43. 4th
+44. 2nd
+45. 3rd
+46. 4th
+47. 1st
+48. 5th
+49. X
+50. 2nd
+
+ModernColBERT Results (32 out of 50 episodes retrieved) (15 out of the 32 are the highest scored episode)
+1. X
+2. 1st
+3. 1st
+4. 1st
+5. 1st
+6. X
+7. 1st
+8. 2nd
+9. X
+10. 4th
+11. 3rd
+12. X
+13. 1st
+14. X
+15. X
+16. X
+17. 3rd
+18. 1st
+19. 3rd
+20. 2nd
+21. X
+22. X
+23. 1st
+24. 1st
+25. X
+26. X
+27. X
+28. X
+29. 1st 
+30. 2nd
+31. X
+32. 1st
+33. 2nd
+34. 4th
+35. 2nd
+36. X
+37. 2nd
+38. 1st
+39. 3rd
+40. 1st
+41. 1st
+42. 5th
+43. X
+44. 3rd
+45. 5th
+46. X
+47. 1st
+48. 2nd
+49. X
+50. 2nd
+
+
