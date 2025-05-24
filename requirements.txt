@@ -9,8 +9,8 @@ yt-dlp==2025.2.19
 
 # whisper
 # fix on transformers not yet merged to main transformers branch
-transformers @ git+https://github.com/eustlb/transformers@whisper-pipeline-fix-word-timestamps
-# transformers
+# transformers@git+https://github.com/eustlb/transformers@whisper-pipeline-fix-word-timestamps
+transformers
 accelerate
 
 # pytorch
