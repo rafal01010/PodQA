@@ -195,14 +195,14 @@ The following recordings showcase PodQS in different configurations:
 ### Demo 1: Gemini API Integration
 This demonstration shows the RAG application using Google's Gemini API as the large language model.
 
-[https://youtu.be/zSvxGy5jEHg]
+[![PodQA | Gemini-2.5-Flash](https://img.youtube.com/vi/zSvxGy5jEHg/maxresdefault.jpg)](https://www.youtube.com/watch?v=zSvxGy5jEHg)
 
 ### Demo 2: Local Gemma Model
 This recording demonstrates the application running locally using the Gemma-3-4B model on a base M4 Mac Mini.
 
-[https://youtu.be/7HRnOGKiCS8]
+[![PodQA | Gemma-3-4B | (5 episodes retrieved)](https://img.youtube.com/vi/7HRnOGKiCS8/maxresdefault.jpg)](https://www.youtube.com/watch?v=7HRnOGKiCS8)
 
 ### Demo 3: Local Gemma Model
 This demonstration shows the same local Gemma-3-4B setup but the application is configured to retrieve and pass only 6 documents for faster inference. 
 
-[https://youtu.be/ix2xILezOkE]
+[![PodQA | Gemma-3-4B | (3 episodes retrieved)](https://img.youtube.com/vi/ix2xILezOkE/maxresdefault.jpg)](https://www.youtube.com/watch?v=ix2xILezOkE)
