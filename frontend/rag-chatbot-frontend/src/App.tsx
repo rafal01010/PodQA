@@ -86,12 +86,24 @@ const getYouTubeEmbedUrl = (url: string): string | null => {
   }
 };
 
-// YouTube Embed Component
-const YouTubeEmbed: React.FC<{ embedUrl: string, onClose: () => void }> = ({ embedUrl, onClose }) => {
-  // Append autoplay parameter to the URL
-  const autoplayUrl = embedUrl.includes('?') ? 
+// YouTube Embed Component with improved cleanup
+const YouTubeEmbed: React.FC<{ embedUrl: string, onClose: () => void, shouldAutoplay: boolean }> = ({ embedUrl, onClose, shouldAutoplay }) => {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  
+  // Create the URL with or without autoplay based on the shouldAutoplay prop
+  const finalUrl = shouldAutoplay && embedUrl.includes('?') ? 
     `${embedUrl}&autoplay=1` : 
-    `${embedUrl}?autoplay=1`;
+    shouldAutoplay ? `${embedUrl}?autoplay=1` : embedUrl;
+  
+  useEffect(() => {
+    // Cleanup function to stop the video when component unmounts
+    return () => {
+      if (iframeRef.current) {
+        // Reset the iframe src to stop the video
+        iframeRef.current.src = 'about:blank';
+      }
+    };
+  }, []);
   
   return (
     <div className="youtube-embed-container">
@@ -100,9 +112,10 @@ const YouTubeEmbed: React.FC<{ embedUrl: string, onClose: () => void }> = ({ emb
         <button className="close-embed-btn" onClick={onClose}>×</button>
       </div>
       <iframe 
+        ref={iframeRef}
         width="100%" 
         height="315" 
-        src={autoplayUrl}
+        src={finalUrl}
         title="YouTube video player" 
         frameBorder="0" 
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
@@ -122,8 +135,14 @@ function App() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [expandedSource, setExpandedSource] = useState<string | null>(null);
   const [openDropdowns, setOpenDropdowns] = useState<{[key: string]: boolean}>({});
-  // New state for tracking embedded videos
-  const [embeddedVideo, setEmbeddedVideo] = useState<{messageIndex: number, sourceTitle: string, sourceIndex: number, embedUrl: string} | null>(null);
+  // Modified state to track if this is the first video being opened (for autoplay)
+  const [embeddedVideo, setEmbeddedVideo] = useState<{
+    messageIndex: number, 
+    sourceTitle: string, 
+    sourceIndex: number, 
+    embedUrl: string,
+    isFirstPlay: boolean
+  } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -171,9 +190,19 @@ function App() {
     }
   }, [isLoading]);
 
+  // Close any embedded video when a new message is being sent
+  useEffect(() => {
+    if (isLoading && embeddedVideo) {
+      setEmbeddedVideo(null);
+    }
+  }, [isLoading]);
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
+
+    // Close any embedded video when sending a new message
+    setEmbeddedVideo(null);
 
     // Add user message to UI immediately
     const userMessage: Message = { role: 'user', content: input };
@@ -247,23 +276,30 @@ function App() {
     setExpandedSource(null);
   };
 
-  // Modified to embed video with original URL
+  // Modified to handle video embedding with proper cleanup
   const handleVideoSource = (url: string, messageIndex: number, sourceTitle: string, sourceIndex: number) => {
     const embedUrl = getYouTubeEmbedUrl(url);
     if (embedUrl) {
-      // If a video is already embedded with the same details, close it
-      if (embeddedVideo && 
+      // Check if clicking on the same video that's already embedded
+      const isSameVideo = embeddedVideo && 
           embeddedVideo.messageIndex === messageIndex && 
           embeddedVideo.sourceTitle === sourceTitle &&
-          embeddedVideo.sourceIndex === sourceIndex) {
+          embeddedVideo.sourceIndex === sourceIndex;
+      
+      if (isSameVideo) {
+        // Close the current video
         setEmbeddedVideo(null);
       } else {
-        // Otherwise, embed the new video
+        // Close any existing video and open the new one
+        // Only autoplay if no video was previously embedded (first play)
+        const shouldAutoplay = !embeddedVideo;
+        
         setEmbeddedVideo({
           messageIndex,
           sourceTitle,
           sourceIndex,
-          embedUrl
+          embedUrl,
+          isFirstPlay: shouldAutoplay
         });
       }
     } else {
@@ -383,7 +419,8 @@ function App() {
                                  embeddedVideo.sourceIndex === 0 && (
                                   <YouTubeEmbed 
                                     embedUrl={embeddedVideo.embedUrl} 
-                                    onClose={closeEmbeddedVideo} 
+                                    onClose={closeEmbeddedVideo}
+                                    shouldAutoplay={embeddedVideo.isFirstPlay}
                                   />
                                 )}
                               </div>
@@ -431,7 +468,8 @@ function App() {
                                          embeddedVideo.sourceIndex === i && (
                                           <YouTubeEmbed 
                                             embedUrl={embeddedVideo.embedUrl} 
-                                            onClose={closeEmbeddedVideo} 
+                                            onClose={closeEmbeddedVideo}
+                                            shouldAutoplay={embeddedVideo.isFirstPlay}
                                           />
                                         )}
                                       </div>

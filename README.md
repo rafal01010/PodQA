@@ -187,3 +187,22 @@ Question 49: *"What are their opinions on burgers?"* failed retrieval for both s
 This file contains:
 - All 50 test questions used in the evaluation
 - Individual retrieval results for each question
+
+## Demos
+
+The following recordings showcase PodQS in different configurations:
+
+### Demo 1: Gemini API Integration
+This demonstration shows the RAG application using Google's Gemini API as the large language model.
+
+[https://youtu.be/zSvxGy5jEHg]
+
+### Demo 2: Local Gemma Model
+This recording demonstrates the application running locally using the Gemma-3-4B model on a base M4 Mac Mini.
+
+[https://youtu.be/7HRnOGKiCS8]
+
+### Demo 3: Local Gemma Model
+This demonstration shows the same local Gemma-3-4B setup but the application is configured to retrieve and pass only 6 documents for faster inference. 
+
+[https://youtu.be/ix2xILezOkE]

@@ -126,13 +126,12 @@ def rag_pipeline(
     retrieved_contexts = [context for context in retrieved_contexts if context.get('video_url')]
 
     start_time = time.time()
-    response = "test"
-    # response = generator.generate(
-    #     query=query,
-    #     conversation_history=conversation_history,
-    #     retrieved_contexts=retrieved_contexts,
-    #     **generator_kwargs
-    # )
+    response = generator.generate(
+        query=query,
+        conversation_history=conversation_history,
+        retrieved_contexts=retrieved_contexts,
+        **generator_kwargs
+    )
     end_time = time.time()
     elapsed_time = end_time - start_time
     print(f"Elapsed time for generation: {elapsed_time} seconds")
