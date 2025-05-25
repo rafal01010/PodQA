@@ -190,10 +190,10 @@ This file contains:
 
 ## Demos
 
-The following recordings showcase PodQS in different configurations:
+The following recordings showcase PodQA in different configurations:
 
 ### Demo 1: Gemini API Integration
-This demonstration shows the RAG application using Google's Gemini API as the large language model.
+This demonstration shows the RAG application using Google's Gemini 2.5 Flash API as the large language model.
 
 [https://www.youtube.com/watch?v=zSvxGy5jEHg]
 [![PodQA | Gemini-2.5-Flash](https://img.youtube.com/vi/zSvxGy5jEHg/maxresdefault.jpg)](https://www.youtube.com/watch?v=zSvxGy5jEHg)
