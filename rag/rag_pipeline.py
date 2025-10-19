@@ -4,6 +4,47 @@ from pylate import models
 import torch
 from models.gte_modernbert import GteModernbert
 from models.gte_moderncolbert import GteModernColbert
+from urllib.parse import urlparse, parse_qs
+
+
+def _extract_youtube_id(url: str):
+    """
+    Extract a YouTube video identifier from a variety of supported URL formats.
+    
+    Falls back to None when the URL cannot be parsed, which lets callers
+    decide how to handle missing identifiers without raising.
+    """
+    if not url:
+        return None
+
+    try:
+        parsed = urlparse(url)
+    except ValueError:
+        return None
+
+    netloc = (parsed.netloc or "").lower()
+
+    # Standard watch URLs where the id lives in the "v" query parameter.
+    query_params = parse_qs(parsed.query)
+    if query_params.get("v"):
+        return query_params["v"][0]
+
+    path = (parsed.path or "").lstrip("/")
+
+    # Short links such as youtu.be/<id>
+    if netloc.endswith("youtu.be") and path:
+        return path.split("/")[0]
+
+    # Embedded player or shorts URLs keep the id in the first path segment.
+    youtube_hosts = ("youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com", "youtube-nocookie.com")
+    if any(netloc.endswith(host) for host in youtube_hosts) and path:
+        for prefix in ("embed/", "shorts/"):
+            if path.startswith(prefix):
+                remainder = path[len(prefix):]
+                if remainder:
+                    return remainder.split("/")[0]
+
+    return None
 
 def hybrid_retrieve_context(query, embedding_model_path, table, overfetch_multiplier=3, chunks_per_doc=3, max_docs=5):
     embedding_model = GteModernbert(embedding_model_path)
@@ -150,8 +191,14 @@ def rag_pipeline(
                 'text': []
             }
         
-        video_id = context['video_url'].split('v=')[1]
-        timestamp_url = f"https://youtu.be/{video_id}?t={int(context['start_seconds'])}"
+        video_id = _extract_youtube_id(context['video_url'])
+
+        if video_id:
+            start_seconds = context.get('start_seconds') or 0
+            timestamp_url = f"https://youtu.be/{video_id}?t={int(start_seconds)}"
+        else:
+            # Fall back to the original URL when we cannot derive a canonical timestamp URL.
+            timestamp_url = context['video_url']
         
         result['sources'][file_name]['url'].append(timestamp_url)
         result['sources'][file_name]['text'].append(context['text'])

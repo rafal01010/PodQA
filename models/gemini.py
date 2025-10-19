@@ -2,14 +2,18 @@ from typing import List, Dict, Any, Optional
 import requests
 import os
 import json
+import threading
 
 class Gemini:
     _instance = None
+    _lock = threading.RLock()
     
     def __new__(cls, api_key=None, model_name=None):
         if cls._instance is None:
-            cls._instance = super(Gemini, cls).__new__(cls)
-            cls._instance.initialized = False
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super(Gemini, cls).__new__(cls)
+                    cls._instance.initialized = False
         return cls._instance
 
     def __init__(
@@ -24,7 +28,13 @@ class Gemini:
             api_key: API key for accessing Gemini API. If None, will look for GEMINI_API_KEY in environment
             model_name: Gemini model identifier to use (e.g., "gemini-2.5-flash-preview-04-17", "gemini-1.5-flash")
         """
-        if not self.initialized:
+        if self.initialized:
+            return
+
+        with self.__class__._lock:
+            if self.initialized:
+                return
+
             self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
             if not self.api_key:
                 raise ValueError("No API key provided. Set GEMINI_API_KEY environment variable or pass api_key parameter.")

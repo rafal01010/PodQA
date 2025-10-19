@@ -1,14 +1,18 @@
 from transformers import AutoProcessor, Gemma3ForConditionalGeneration
 from typing import List, Dict, Any, Optional
 import torch
+import threading
 
 class Gemma3:
     _instance = None
+    _lock = threading.RLock()
     
     def __new__(cls, model_path=None, device=None):
         if cls._instance is None:
-            cls._instance = super(Gemma3, cls).__new__(cls)
-            cls._instance.initialized = False
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super(Gemma3, cls).__new__(cls)
+                    cls._instance.initialized = False
         return cls._instance
 
     def __init__(
@@ -24,7 +28,13 @@ class Gemma3:
             device: Device to run the model on ("cuda", "cpu", or "mps").
                    If None, will auto-detect the best available device.
         """
-        if not self.initialized:
+        if self.initialized:
+            return
+
+        with self.__class__._lock:
+            if self.initialized:
+                return
+
             if device is None:
                 if torch.cuda.is_available():
                     device = "cuda"
