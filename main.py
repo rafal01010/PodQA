@@ -2,7 +2,7 @@ import torch
 import lancedb
 from models.gte_modernbert import GteModernbert
 from models.gemma import Gemma3
-from rag.retrieval import retrieve_context
+from rag.rag_pipeline import colbert_retrieve_context
 from rag.rag_pipeline import rag_pipeline
 import os
 
@@ -25,7 +25,7 @@ for _ in range(1):
 
     result = rag_pipeline(
         query=user_in,
-        retriever_function=retrieve_context,
+        retriever_function=colbert_retrieve_context,
         generator=generator,
         embedding_model=embedding_model,
         table=table,

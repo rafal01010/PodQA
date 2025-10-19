@@ -49,7 +49,7 @@ def colbert_retrieve_context(query, modern_colbert_path, table, overfetch_multip
     embedding_model = GteModernColbert(modern_colbert_path)
     print("model loaded")
 
-    query_embedding = embedding_model.encode(query)
+    query_embedding = embedding_model.encode(query, True)
     print("query encoded")
 
     top_k = max_docs * chunks_per_doc * overfetch_multiplier

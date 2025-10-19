@@ -25,10 +25,10 @@ class GteModernColbert:
             )
             self.initialized = True
     
-    def encode(self, query):
+    def encode(self, query, is_query=True):
         multivector_embeddings = self.model.encode(
             query,
-            is_query=False,
+            is_query=is_query,
             show_progress_bar=False,
         )
         return multivector_embeddings.tolist()
